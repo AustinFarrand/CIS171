@@ -1,40 +1,61 @@
 
 package exercise22_8;
-import java.io.FileOutputStream;
-import java.io.DataOutputStream;
 import java.io.IOException;
+import java.io.RandomAccessFile;
 
 public class Exercise22_8 {
 
-    
-    public static void main(String[] args) throws IOException {
-        int n = 1000000;
-        int number = 2; //a number to be tested for prime-ness
-        int count = 0; //count the numer of prime numberz we found
-        final int NUMBER_PER_LINE = 10;
-        //repeatedly find prime numbers
-        while (number <= n){
-            //assume the number is prime
-            boolean isPrime = true;
-            //test if number is prime
-            for(int divisor = 2; divisor <=(int)(Math.sqrt(number)); divisor++){
-                if(number % divisor == 0){
-                    isPrime = false;
-                    break;
-                }
-            }
-            //print the prime number and increase the count
-            if(isPrime){
-                count++;
-                if(count % NUMBER_PER_LINE == 0){
-                    System.out.printf("%7d\n", number);
-                }
-                else
-                    System.out.printf("%7d", number);
-            }
-            number++;
+    final static int ARRAY_SIZE = 10000;
+    public static void main(String[] args) throws Exception {
+        final long N = 1000001;
+        
+        long[] primeNumbers = new long[ARRAY_SIZE];
+        long number;
+        
+        int squareRoot = 1;
+        
+        //start with a starting point
+        RandomAccessFile inout = new RandomAccessFile("PrimeNumbers.dat", "rw");
+        if(inout.length() == 0){
+            number = 1;
         }
-        System.out.println("\n" + count + "prime(s) less than or equal to " + n);
+        else{
+            inout.seek(inout.length() - 8);
+            number = inout.readLong();
+        }
+        
+        newNumber: while(number <= N){
+            number++;
+            
+            inout.seek(0);
+            if(squareRoot * squareRoot < number){
+                squareRoot++;
+            }
+            while(inout.getFilePointer()<inout.length()){
+                int size = readNextBatch(primeNumbers, inout);
+                    
+                    for(int k = 0; k < size && primeNumbers[k] <= squareRoot; k++){
+                        if(number % primeNumbers[k] == 0){
+                            continue newNumber;
+                        }
+                    }
+                    
+                    inout.seek(inout.length());
+                    inout.writeLong(number);
+            }
+        }
     }
         
+    public static int readNextBatch(long[] primeNumbers, RandomAccessFile inout){
+        int size = 0;
+        try {
+            while(inout.getFilePointer() < inout.length() && size < ARRAY_SIZE){
+                primeNumbers[size++] = inout.readLong();
+            }
+        }
+        catch (Exception ex){
+            ex.printStackTrace();
+        }
+        return size;
+    }
 }
